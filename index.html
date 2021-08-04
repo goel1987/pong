@@ -1,0 +1,166 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" />
+    <title>Pong</title>
+    <script src="phaser.min.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+// Initial screen size and other configurations
+var game = new Phaser.Game(800,600,Phaser.AUTO,'',{preload : preload, create: create, update: update});
+
+
+var paddle1;
+var paddle2;
+var ball;
+
+var ball_launched;
+var ball_velocity;
+
+var score1_text;
+var score2_text;
+
+var score1;
+var score2;
+
+function preload ()
+{
+	// Load sprites
+    game.load.image('paddle', 'assets/paddle.png');
+    game.load.image('ball', 'assets/ball.png');
+	game.load.audio('hit_1',['assets/hit_1.ogg','assets/hit_1.wav']);
+	game.load.audio('hit_2',['assets/hit_2.ogg','assets/hit_2.wav']);
+}
+
+
+
+function create ()
+{
+	// Set initial ball as fixed
+	ball_launched = false;
+	ball_velocity = 400;
+	
+	// Set sprites position
+	paddle1 = create_paddle(0, game.world.centerY);
+	paddle2 = create_paddle(game.world.width - 8, game.world.centerY);
+	ball = create_ball(game.world.centerX, game.world.centerY);
+	
+	//On Mouse Click, Launched the Ball
+	game.input.onDown.add(launch_ball, this);
+
+	// Add Score Text to Display
+	score1_text = game.add.text(128, 128, '0', {
+		font: "64px Gabriella",
+		fill: "#ffffff",
+		align: "center"
+	});
+	
+	score2_text = game.add.text(game.world.width - 128, 128, '0', {
+		font: "64px Gabriella",
+		fill: "#ffffff",
+		align: "center"
+	});
+	
+	score1 = 0;
+	score2 = 0;
+
+}
+
+function create_paddle(x,y){
+	//Add the sprite and position
+	var paddle = game.add.sprite(x,y,'paddle');
+	
+	// Set paddle size to half
+	paddle.anchor.setTo(0.5,0.5);
+	game.physics.arcade.enable(paddle);
+	
+	paddle.body.collideWorldBounds = true;
+	paddle.body.immovable = true;
+	paddle.scale.setTo(0.5, 0.5);
+	
+	return paddle;
+}
+
+function control_paddle(paddle, y)
+{
+	paddle.y = y;
+	
+	//Paddle Sprite position moves upto which position
+	if(paddle.y < paddle.height / 2){
+		paddle.y = paddle.height / 2;
+	}
+	else if(paddle.y > game.world.height - paddle.height / 2){
+		paddle.y = game.world.height - paddle.height / 2;
+	}
+}
+
+function create_ball(x,y){
+	//Add the sprite and position
+	var ball = game.add.sprite(x,y,'ball');
+	paddle1.anchor.setTo(0.5,0.5);
+	game.physics.arcade.enable(ball);
+
+	ball.body.collideWorldBounds = true;
+	ball.body.bounce.setTo(1,1);
+
+	return ball;
+}
+
+function launch_ball(){
+	// Launched the Ball and moving position
+	if(ball_launched){
+		ball.x = game.world.centerX;
+		ball.y = game.world.centerY;
+		ball.body.velocity.setTo(0,0);
+		ball_launched = false;
+	}else{
+		ball.body.velocity.x = -ball_velocity;
+		ball.body.velocity.y = ball_velocity;		
+		ball_launched = true;
+	}
+}
+
+function update ()
+{
+	// Update the score
+	score1_text.text = score1;
+	score2_text.text = score2;
+
+	control_paddle(paddle1,this.game.input.y);
+	
+	// Collide between Paddle and Ball with sound
+	game.physics.arcade.collide(paddle1, ball, function(){
+		game.sound.play('hit_1');
+	});
+	game.physics.arcade.collide(paddle2, ball, function(){
+		game.sound.play('hit_2');
+	});
+
+	//If hit left wall then score to second one and if hit right wall then score to first one
+	if(ball.body.blocked.left){
+		score2 += 1;
+	}
+	else if(ball.body.blocked.right){
+		score1 += 1;
+	}
+
+	// Set paddle 2 velocity equals to ball velocity
+	paddle2.body.velocity.setTo(ball.body.velocity.y);
+	paddle2.body.velocity.x = 0;
+	paddle2.body.maxVelocity.y = 250;
+	
+
+}
+
+</script>
+
+</body>
+</html>
